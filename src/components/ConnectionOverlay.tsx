@@ -7,98 +7,108 @@ interface ConnectionOverlayProps {
   zoomLevel: number;
   onDeleteConnection?: (connId: string) => void;
   onToggleStyle?: (connId: string) => void;
-  onEditConnection?: (connId: string) => void;
 }
 
 interface PathCoords {
   id: string;
   sourceId: string;
   targetId: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  x1: number; y1: number;
+  x2: number; y2: number;
   pathD: string;
   label?: string;
   style: 'solid' | 'dashed';
   color: string;
 }
 
+const FAN_SPACING = 14; // px between adjacent lines at exit/entry
+
 export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
-  connections,
-  containerRef,
-  zoomLevel,
-  onDeleteConnection,
-  onToggleStyle,
-  onEditConnection,
+  connections, containerRef, zoomLevel, onDeleteConnection, onToggleStyle,
 }) => {
   const [paths, setPaths] = useState<PathCoords[]>([]);
   const [hoveredConnId, setHoveredConnId] = useState<string | null>(null);
 
   const calculatePaths = () => {
     if (!containerRef.current) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
+    const cr = containerRef.current.getBoundingClientRect();
 
-    const newPaths: PathCoords[] = [];
+    // Group connections by source node
+    const groups: Record<string, { conn: typeof connections[0]; targetEl: Element }[]> = {};
+    connections.forEach(conn => {
+      const se = document.getElementById(`node-card-${conn.sourceNodeId}`);
+      const te = document.getElementById(`node-card-${conn.targetNodeId}`);
+      if (!se || !te) return;
+      if (!groups[conn.sourceNodeId]) groups[conn.sourceNodeId] = [];
+      groups[conn.sourceNodeId].push({ conn, targetEl: te });
+    });
 
-    connections.forEach((conn) => {
-      const sourceEl = document.getElementById(`node-card-${conn.sourceNodeId}`);
-      const targetEl = document.getElementById(`node-card-${conn.targetNodeId}`);
+    const result: PathCoords[] = [];
 
-      if (sourceEl && targetEl) {
-        const sourceRect = sourceEl.getBoundingClientRect();
-        const targetRect = targetEl.getBoundingClientRect();
+    Object.entries(groups).forEach(([sourceId, entries]) => {
+      const sourceEl = document.getElementById(`node-card-${sourceId}`);
+      if (!sourceEl) return;
+      const sr = sourceEl.getBoundingClientRect();
+      const count = entries.length;
+      const mid = (count - 1) / 2;
 
-        // Calculate positions relative to container
-        const x1 = (sourceRect.left + sourceRect.width / 2 - containerRect.left) / zoomLevel;
-        const y1 = (sourceRect.top + sourceRect.height / 2 - containerRect.top) / zoomLevel;
-        const x2 = (targetRect.left + targetRect.width / 2 - containerRect.left) / zoomLevel;
-        const y2 = (targetRect.top + targetRect.height / 2 - containerRect.top) / zoomLevel;
+      entries.forEach(({ conn, targetEl }, idx) => {
+        const tr = targetEl.getBoundingClientRect();
 
-        // Smooth cubic bezier curve calculation
-        const dx = Math.abs(x2 - x1);
-        const dy = Math.abs(y2 - y1);
-        const controlOffset = Math.min(Math.max(dx * 0.4, 40), 120);
+        // Fan-out offset: lines spread out from center
+        const offset = (idx - mid) * FAN_SPACING;
 
-        let pathD = '';
-        if (Math.abs(y2 - y1) < 20) {
-          // Horizontal line
-          pathD = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
-        } else if (x2 > x1) {
-          // Forward flow
-          pathD = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
-        } else {
-          // Backward / vertical loop flow
-          pathD = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1 + dy / 2}, ${x2 - controlOffset} ${y2 - dy / 2}, ${x2} ${y2}`;
-        }
+        // Source node: exit from bottom edge, fan horizontally
+        const sLeft = (sr.left - cr.left) / zoomLevel;
+        const sTop = (sr.top - cr.top) / zoomLevel;
+        const sW = sr.width / zoomLevel;
+        const sH = sr.height / zoomLevel;
 
-        newPaths.push({
+        const tLeft = (tr.left - cr.left) / zoomLevel;
+        const tTop = (tr.top - cr.top) / zoomLevel;
+        const tW = tr.width / zoomLevel;
+        const tH = tr.height / zoomLevel;
+
+        // Source exit point: bottom edge with horizontal fan
+        const x1 = sLeft + sW / 2 + offset * 0.6;
+        const y1 = sTop + sH;
+
+        // Target entry point: top edge with horizontal fan
+        const x2 = tLeft + tW / 2 + offset * 0.4;
+        const y2 = tTop;
+
+        // Bezier control points
+        const absDy = Math.abs(y2 - y1);
+        const absDx = Math.abs(x2 - x1);
+        const ctrlYOffset = Math.max(absDy * 0.4, 20);
+        const ctrlXOffset = Math.min(absDx * 0.3, 50);
+
+        const pathD = x2 > x1
+          ? `M ${x1} ${y1} C ${x1 + ctrlXOffset} ${y1 + ctrlYOffset * 0.3}, ${x2 - ctrlXOffset} ${y2 - ctrlYOffset * 0.3}, ${x2} ${y2}`
+          : `M ${x1} ${y1} C ${x1 - ctrlXOffset} ${y1 + ctrlYOffset * 0.3}, ${x2 + ctrlXOffset} ${y2 - ctrlYOffset * 0.3}, ${x2} ${y2}`;
+
+        result.push({
           id: conn.id,
           sourceId: conn.sourceNodeId,
           targetId: conn.targetNodeId,
-          x1,
-          y1,
-          x2,
-          y2,
-          pathD,
+          x1, y1, x2, y2, pathD,
           label: conn.label,
           style: conn.style,
           color: conn.style === 'dashed' ? '#ec4899' : conn.color || '#3b82f6',
         });
-      }
+      });
     });
 
-    setPaths(newPaths);
+    setPaths(result);
   };
 
   useEffect(() => {
     calculatePaths();
-    const handleResize = () => calculatePaths();
-    window.addEventListener('resize', handleResize);
-    const interval = setInterval(calculatePaths, 800); // Periodic sync for DOM changes
-
+    const handle = () => calculatePaths();
+    window.addEventListener('resize', handle);
+    const interval = setInterval(calculatePaths, 800);
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handle);
       clearInterval(interval);
     };
   }, [connections, zoomLevel]);
@@ -106,117 +116,50 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
   if (paths.length === 0) return null;
 
   return (
-    <svg
-      className="absolute inset-0 w-full h-full pointer-events-none z-10"
-      style={{ overflow: 'visible' }}
-    >
+    <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
       <defs>
-        {/* Solid Arrow Marker */}
-        <marker
-          id="arrow-solid"
-          viewBox="0 0 10 10"
-          refX="8"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
+        <marker id="arrow-solid" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
         </marker>
-
-        {/* Dashed Arrow Marker */}
-        <marker
-          id="arrow-dashed"
-          viewBox="0 0 10 10"
-          refX="8"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
+        <marker id="arrow-dashed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="#ec4899" />
         </marker>
       </defs>
 
-      {paths.map((p) => {
+      {paths.map(p => {
         const isHovered = hoveredConnId === p.id;
         const midX = (p.x1 + p.x2) / 2;
         const midY = (p.y1 + p.y2) / 2;
-        const displayLabel = p.label || '点击编辑标签';
 
         return (
           <g key={p.id} className="pointer-events-auto">
-            {/* Wider hit test path */}
-            <path
-              d={p.pathD}
-              fill="none"
-              stroke="transparent"
-              strokeWidth="20"
-              className="cursor-pointer"
+            <path d={p.pathD} fill="none" stroke="transparent" strokeWidth="16" className="cursor-pointer"
               onMouseEnter={() => setHoveredConnId(p.id)}
               onMouseLeave={() => setHoveredConnId(null)}
-              onClick={() => onEditConnection ? onEditConnection(p.id) : onToggleStyle?.(p.id)}
+              onClick={() => onToggleStyle?.(p.id)}
             />
-
-            {/* Visual Path Line */}
-            <path
-              d={p.pathD}
-              fill="none"
-              stroke={p.color}
-              strokeWidth={isHovered ? 3.5 : 2}
+            <path d={p.pathD} fill="none" stroke={p.color} strokeWidth={isHovered ? 3 : 2}
               strokeDasharray={p.style === 'dashed' ? '6,6' : 'none'}
               markerEnd={p.style === 'dashed' ? 'url(#arrow-dashed)' : 'url(#arrow-solid)'}
-              className="transition-all duration-150 cursor-pointer"
+              className="transition-all duration-150"
             />
-
-            {/* Label badge */}
-            <g
-              transform={`translate(${midX}, ${midY})`}
-              className="cursor-pointer group"
-              onClick={() => onEditConnection ? onEditConnection(p.id) : onToggleStyle?.(p.id)}
-              onMouseEnter={() => setHoveredConnId(p.id)}
-              onMouseLeave={() => setHoveredConnId(null)}
-            >
-              <rect
-                x={-Math.max(displayLabel.length * 5 + 10, 36)}
-                y="-12"
-                width={Math.max(displayLabel.length * 10 + 20, 72)}
-                height="24"
-                rx="12"
-                fill={p.style === 'dashed' ? '#fce7f3' : '#eff6ff'}
-                stroke={p.color}
-                strokeWidth="1.5"
-                className="shadow-sm hover:scale-105 transition-transform"
-              />
-              <text
-                x="0"
-                y="4"
-                textAnchor="middle"
-                fontSize="11"
-                fontWeight="700"
-                fill={p.style === 'dashed' ? '#be185d' : '#1e40af'}
-              >
-                {displayLabel}
-              </text>
-            </g>
-
-            {/* Hover Actions: Quick Delete button & Style toggle button */}
-            {isHovered && (
-              <g
-                transform={`translate(${midX + Math.max(displayLabel.length * 5 + 24, 48)}, ${midY - 14})`}
-                className="cursor-pointer shadow-md"
+            {p.label && (
+              <g transform={`translate(${midX}, ${midY})`} className="cursor-pointer group"
+                onClick={() => onToggleStyle?.(p.id)}
                 onMouseEnter={() => setHoveredConnId(p.id)}
                 onMouseLeave={() => setHoveredConnId(null)}
               >
-                {/* Delete button */}
-                {onDeleteConnection && (
-                  <g onClick={(e) => { e.stopPropagation(); onDeleteConnection(p.id); }}>
-                    <circle r="10" fill="#ef4444" className="hover:scale-110 transition-transform" />
-                    <text x="0" y="4" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
-                      ×
-                    </text>
-                  </g>
-                )}
+                <rect x={-p.label.length * 5 - 8} y="-10" width={p.label.length * 10 + 16} height="20" rx="10"
+                  fill={p.style === 'dashed' ? '#fce7f3' : '#eff6ff'} stroke={p.color} strokeWidth="1" />
+                <text x="0" y="3" textAnchor="middle" fontSize="10" fontWeight="600"
+                  fill={p.style === 'dashed' ? '#be185d' : '#1e40af'}>{p.label}</text>
+              </g>
+            )}
+            {isHovered && onDeleteConnection && (
+              <g transform={`translate(${midX + 25}, ${midY - 12})`} className="cursor-pointer"
+                onClick={() => onDeleteConnection(p.id)}>
+                <circle r="8" fill="#ef4444" />
+                <text x="0" y="3" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">×</text>
               </g>
             )}
           </g>
