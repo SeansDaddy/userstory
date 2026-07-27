@@ -1,0 +1,6 @@
+{
+  "name": "用户旅程图编辑器",
+  "description": "交互式可编辑用户旅程图 (User Journey Map)，支持阶段、场景、角色泳道、卡片节点、触点指标矩阵编辑及AI生成建议",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
