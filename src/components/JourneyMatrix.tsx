@@ -263,7 +263,6 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           onAddAttributeRow={onAddAttributeRow}
           onDeleteAttributeRow={onDeleteAttributeRow}
           onUpdateAttributeRow={onUpdateAttributeRow}
-          gridTemplateCols={`160px ${data.subStages.map(() => 'minmax(150px, 1fr)').join(' ')}`}
         />
       </div>
 
