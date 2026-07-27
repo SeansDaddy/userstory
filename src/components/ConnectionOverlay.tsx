@@ -143,6 +143,8 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
         {paths.map(p => {
           const isHovered = hoveredId === p.id;
 
+          const connObj = connections.find(c => c.id === p.id);
+
           return (
             <g key={p.id} className="pointer-events-auto">
               {/* Hit area */}
@@ -150,6 +152,10 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
                 onMouseEnter={() => setHoveredId(p.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onContextMenu={(e) => handleContextMenu(e, p.id)}
+                onDoubleClick={() => {
+                  setEditingLabel({ connId: p.id, label: connObj?.label || '' });
+                }}
+                onClick={() => onToggleStyle?.(p.id)}
               />
               {/* Visual line */}
               <path d={p.pathD} fill="none"
