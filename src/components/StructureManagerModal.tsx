@@ -46,24 +46,39 @@ export const StructureManagerModal: React.FC<StructureManagerModalProps> = ({
 
   // Stage operations
   const handleAddStage = () => {
+    const stageId = `stg_${Date.now()}`;
     const newStage: Stage = {
-      id: `stg_${Date.now()}`,
+      id: stageId,
       name: '新阶段',
       color: '#3b82f6',
       description: '阶段描述...',
       order: stages.length + 1,
     };
+    // 同时新增一个默认子阶段，保证矩阵有一列
+    const newSubStage: SubStage = {
+      id: `sstg_${Date.now()}`,
+      stageId,
+      name: '新场景',
+      isKey: false,
+      order: subStages.length + 1,
+    };
     // 如果有选中的阶段，插入到它后面；否则追加到末尾
     if (selectedStageId) {
       const idx = stages.findIndex(s => s.id === selectedStageId);
       if (idx !== -1) {
-        const copy = [...stages];
-        copy.splice(idx + 1, 0, newStage);
-        setStages(copy);
+        const stageCopy = [...stages];
+        stageCopy.splice(idx + 1, 0, newStage);
+        setStages(stageCopy);
+        const subCopy = [...subStages];
+        // 找到选中阶段最后一个子阶段的位置，插入在后面
+        const lastSubIdx = subCopy.map(ss => ss.stageId).lastIndexOf(selectedStageId);
+        subCopy.splice(lastSubIdx + 1, 0, newSubStage);
+        setSubStages(subCopy);
         return;
       }
     }
     setStages([...stages, newStage]);
+    setSubStages([...subStages, newSubStage]);
   };
 
   const handleDeleteStage = (id: string) => {
