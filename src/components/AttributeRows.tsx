@@ -151,14 +151,14 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
           {attributeRows.map((row) => (
             <div
               key={row.id}
-              className="grid grid-cols-[160px_1fr] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-2xs"
+              className="grid grid-cols-[200px_1fr] bg-slate-50 border border-slate-200 rounded-xl shadow-2xs"
             >
               {/* Left Row Header */}
               <div className="bg-slate-100 p-2.5 border-r border-slate-200 flex items-center justify-between group">
                 <div className="flex items-center gap-1.5 overflow-hidden flex-1 min-w-0 pr-1">
                   {getRowIcon(row.iconName)}
                   <span
-                    className="text-sm font-bold text-slate-800 truncate"
+                    className="text-sm font-bold text-slate-800 break-words"
                     title={row.name}
                   >
                     {row.name}
@@ -194,7 +194,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
               <div
                 className="grid gap-1.5 p-1 bg-white"
                 style={{
-                  gridTemplateColumns: `repeat(${subStages.length}, minmax(140px, 1fr))`,
+                  gridTemplateColumns: `repeat(${subStages.length}, minmax(180px, 1fr))`,
                 }}
               >
                 {subStages.map((subStage) => {
@@ -237,7 +237,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
                         </div>
                       ) : (
                         <>
-                          <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap">
+                          <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words">
                             {value || <span className="text-slate-300 italic">点击添加...</span>}
                           </div>
                           <Edit2 className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 absolute top-1 right-1 transition-opacity" />
