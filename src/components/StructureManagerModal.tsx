@@ -16,6 +16,7 @@ export const StructureManagerModal: React.FC<StructureManagerModalProps> = ({
   onUpdateStructure,
 }) => {
   const [activeTab, setActiveTab] = useState<'stages' | 'subStages' | 'roles'>('stages');
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
 
   // Local state copy
   const [stages, setStages] = useState<Stage[]>(data.stages);
@@ -52,6 +53,16 @@ export const StructureManagerModal: React.FC<StructureManagerModalProps> = ({
       description: '阶段描述...',
       order: stages.length + 1,
     };
+    // 如果有选中的阶段，插入到它后面；否则追加到末尾
+    if (selectedStageId) {
+      const idx = stages.findIndex(s => s.id === selectedStageId);
+      if (idx !== -1) {
+        const copy = [...stages];
+        copy.splice(idx + 1, 0, newStage);
+        setStages(copy);
+        return;
+      }
+    }
     setStages([...stages, newStage]);
   };
 
@@ -162,7 +173,12 @@ export const StructureManagerModal: React.FC<StructureManagerModalProps> = ({
               {stages.map((stg) => (
                 <div
                   key={stg.id}
-                  className="p-3 bg-slate-800 border border-slate-700 rounded-xl space-y-2"
+                  className={`p-3 rounded-xl space-y-2 cursor-pointer transition-colors ${
+                    selectedStageId === stg.id
+                      ? 'bg-blue-900/40 border-2 border-blue-500'
+                      : 'bg-slate-800 border border-slate-700 hover:border-slate-600'
+                  }`}
+                  onClick={() => setSelectedStageId(stg.id)}
                 >
                   <div className="flex items-center gap-3">
                     <input
