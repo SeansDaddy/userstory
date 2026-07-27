@@ -23,7 +23,9 @@ import {
   Compass,
   FolderKanban,
   Edit2,
-  Save
+  Save,
+  Copy,
+  Check
 } from 'lucide-react';
 import { ActiveView } from '../types';
 
@@ -42,6 +44,7 @@ interface HeaderProps {
   onExportJson: () => void;
   onExportCsv: () => void;
   onExportImage: () => void;
+  onCopyImage: () => void;
   onImportJson: (file: File) => void;
   onResetDefault: () => void;
   zoomLevel: number;
@@ -69,6 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
   onExportJson,
   onExportCsv,
   onExportImage,
+  onCopyImage,
   onImportJson,
   onResetDefault,
   zoomLevel,
@@ -83,6 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
   const [showExportMenu, setShowExportMenu] = React.useState(false);
+  const [copySuccess, setCopySuccess] = React.useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-slate-900 text-slate-100 border-b border-slate-800 shadow-lg w-full">
       {/* Top Bar - Edge to Edge Single Line without scrollbars */}
-      <div className="w-full px-3 sm:px-4 flex items-center justify-between gap-2.5 overflow-hidden whitespace-nowrap h-16">
+      <div className="w-full px-3 sm:px-4 flex items-center justify-between gap-2.5 whitespace-nowrap h-16">
         {/* Left: Brand & Map Title */}
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 py-1.5 rounded-xl text-white font-medium shadow-md">
@@ -325,36 +330,41 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                 <div className="px-4 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">数据与图表导出</div>
                 <button
-                  onClick={() => {
-                    onExportImage();
-                    setShowExportMenu(false);
-                  }}
+                  onClick={() => onExportImage()}
                   className="w-full text-left px-4 py-2 hover:bg-slate-700/80 text-slate-200 flex items-center gap-2.5 font-medium"
                 >
                   <FileImage className="w-4 h-4 text-amber-400" />
-                  <span>导出 PNG 高清图片</span>
+                  <span>导出 PNG 图片</span>
                 </button>
 
                 <button
                   onClick={() => {
-                    onExportJson();
-                    setShowExportMenu(false);
+                    onCopyImage();
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
                   }}
+                  className="w-full text-left px-4 py-2 hover:bg-slate-700/80 text-slate-200 flex items-center gap-2.5 font-medium"
+                >
+                  {copySuccess
+                    ? <Check className="w-4 h-4 text-emerald-400" />
+                    : <Copy className="w-4 h-4 text-purple-400" />}
+                  <span>{copySuccess ? '已复制 JSON！' : '复制 JSON 源码'}</span>
+                </button>
+
+                <button
+                  onClick={() => onExportJson()}
                   className="w-full text-left px-4 py-2 hover:bg-slate-700/80 text-slate-200 flex items-center gap-2.5 font-medium"
                 >
                   <FileJson className="w-4 h-4 text-blue-400" />
-                  <span>导出 JSON 文件</span>
+                  <span>下载 JSON 文件</span>
                 </button>
 
                 <button
-                  onClick={() => {
-                    onExportCsv();
-                    setShowExportMenu(false);
-                  }}
+                  onClick={() => onExportCsv()}
                   className="w-full text-left px-4 py-2 hover:bg-slate-700/80 text-slate-200 flex items-center gap-2.5 font-medium"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                  <span>导出 CSV 清单</span>
+                  <span>下载 CSV 清单</span>
                 </button>
 
                 <div className="border-t border-slate-700 my-1.5" />
