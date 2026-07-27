@@ -7,6 +7,7 @@ interface ConnectionOverlayProps {
   zoomLevel: number;
   onDeleteConnection?: (connId: string) => void;
   onToggleStyle?: (connId: string) => void;
+  onEditConnection?: (connId: string) => void;
 }
 
 interface PathCoords {
@@ -29,6 +30,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
   zoomLevel,
   onDeleteConnection,
   onToggleStyle,
+  onEditConnection,
 }) => {
   const [paths, setPaths] = useState<PathCoords[]>([]);
   const [hoveredConnId, setHoveredConnId] = useState<string | null>(null);
@@ -140,6 +142,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
         const isHovered = hoveredConnId === p.id;
         const midX = (p.x1 + p.x2) / 2;
         const midY = (p.y1 + p.y2) / 2;
+        const displayLabel = p.label || '点击编辑标签';
 
         return (
           <g key={p.id} className="pointer-events-auto">
@@ -148,11 +151,11 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
               d={p.pathD}
               fill="none"
               stroke="transparent"
-              strokeWidth="16"
+              strokeWidth="20"
               className="cursor-pointer"
               onMouseEnter={() => setHoveredConnId(p.id)}
               onMouseLeave={() => setHoveredConnId(null)}
-              onClick={() => onToggleStyle && onToggleStyle(p.id)}
+              onClick={() => onEditConnection ? onEditConnection(p.id) : onToggleStyle?.(p.id)}
             />
 
             {/* Visual Path Line */}
@@ -160,55 +163,60 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
               d={p.pathD}
               fill="none"
               stroke={p.color}
-              strokeWidth={isHovered ? 3 : 2}
+              strokeWidth={isHovered ? 3.5 : 2}
               strokeDasharray={p.style === 'dashed' ? '6,6' : 'none'}
               markerEnd={p.style === 'dashed' ? 'url(#arrow-dashed)' : 'url(#arrow-solid)'}
-              className="transition-all duration-150"
+              className="transition-all duration-150 cursor-pointer"
             />
 
-            {/* Label badge if available */}
-            {p.label && (
+            {/* Label badge */}
+            <g
+              transform={`translate(${midX}, ${midY})`}
+              className="cursor-pointer group"
+              onClick={() => onEditConnection ? onEditConnection(p.id) : onToggleStyle?.(p.id)}
+              onMouseEnter={() => setHoveredConnId(p.id)}
+              onMouseLeave={() => setHoveredConnId(null)}
+            >
+              <rect
+                x={-Math.max(displayLabel.length * 5 + 10, 36)}
+                y="-12"
+                width={Math.max(displayLabel.length * 10 + 20, 72)}
+                height="24"
+                rx="12"
+                fill={p.style === 'dashed' ? '#fce7f3' : '#eff6ff'}
+                stroke={p.color}
+                strokeWidth="1.5"
+                className="shadow-sm hover:scale-105 transition-transform"
+              />
+              <text
+                x="0"
+                y="4"
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="700"
+                fill={p.style === 'dashed' ? '#be185d' : '#1e40af'}
+              >
+                {displayLabel}
+              </text>
+            </g>
+
+            {/* Hover Actions: Quick Delete button & Style toggle button */}
+            {isHovered && (
               <g
-                transform={`translate(${midX}, ${midY})`}
-                className="cursor-pointer group"
-                onClick={() => onToggleStyle && onToggleStyle(p.id)}
+                transform={`translate(${midX + Math.max(displayLabel.length * 5 + 24, 48)}, ${midY - 14})`}
+                className="cursor-pointer shadow-md"
                 onMouseEnter={() => setHoveredConnId(p.id)}
                 onMouseLeave={() => setHoveredConnId(null)}
               >
-                <rect
-                  x={-p.label.length * 5 - 8}
-                  y="-10"
-                  width={p.label.length * 10 + 16}
-                  height="20"
-                  rx="10"
-                  fill={p.style === 'dashed' ? '#fce7f3' : '#eff6ff'}
-                  stroke={p.color}
-                  strokeWidth="1"
-                />
-                <text
-                  x="0"
-                  y="3"
-                  textAnchor="middle"
-                  fontSize="10"
-                  fontWeight="600"
-                  fill={p.style === 'dashed' ? '#be185d' : '#1e40af'}
-                >
-                  {p.label}
-                </text>
-              </g>
-            )}
-
-            {/* Hover Actions / Delete button */}
-            {isHovered && onDeleteConnection && (
-              <g
-                transform={`translate(${midX + 25}, ${midY - 12})`}
-                className="cursor-pointer"
-                onClick={() => onDeleteConnection(p.id)}
-              >
-                <circle r="8" fill="#ef4444" />
-                <text x="0" y="3" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-                  ×
-                </text>
+                {/* Delete button */}
+                {onDeleteConnection && (
+                  <g onClick={(e) => { e.stopPropagation(); onDeleteConnection(p.id); }}>
+                    <circle r="10" fill="#ef4444" className="hover:scale-110 transition-transform" />
+                    <text x="0" y="4" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
+                      ×
+                    </text>
+                  </g>
+                )}
               </g>
             )}
           </g>

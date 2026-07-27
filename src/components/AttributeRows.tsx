@@ -118,16 +118,16 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
   return (
     <div className="mt-4 border-t-2 border-slate-300 pt-3">
       <div className="flex items-center justify-between mb-2 px-2">
-        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-          <Smartphone className="w-4 h-4 text-blue-600" />
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+          <Smartphone className="w-4.5 h-4.5 text-blue-600" />
           <span>扩展分析维度 (触点 / VOC / PV / 专项规划)</span>
         </h3>
         {onAddAttributeRow && (
           <button
             onClick={handleOpenAddModal}
-            className="text-[11px] bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+            className="text-xs bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5 text-blue-600" />
+            <Plus className="w-4 h-4 text-blue-600" />
             <span>新增属性维度行</span>
           </button>
         )}
@@ -135,13 +135,13 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
 
       {attributeRows.length === 0 ? (
         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-500 my-2">
-          <p className="text-xs mb-2">暂无属性分析维度，您可自由新增如【产品触点】、【VOC反馈】、【考核KPI】等评估行。</p>
+          <p className="text-sm mb-2">暂无属性分析维度，您可自由新增如【产品触点】、【VOC反馈】、【考核KPI】等评估行。</p>
           {onAddAttributeRow && (
             <button
               onClick={handleOpenAddModal}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1 shadow-xs transition-colors"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold inline-flex items-center gap-1 shadow-xs transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>新增第一个属性维度行</span>
             </button>
           )}
@@ -158,7 +158,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
                 <div className="flex items-center gap-1.5 overflow-hidden flex-1 min-w-0 pr-1">
                   {getRowIcon(row.iconName)}
                   <span
-                    className="text-xs font-bold text-slate-800 truncate"
+                    className="text-sm font-bold text-slate-800 truncate"
                     title={row.name}
                   >
                     {row.name}
@@ -205,7 +205,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
                   return (
                     <div
                       key={subStage.id}
-                      className="group relative bg-slate-50/70 border border-slate-100 hover:border-blue-300 rounded-lg p-2 transition-colors cursor-pointer text-xs flex flex-col justify-center min-h-[52px]"
+                      className="group relative bg-slate-50/70 border border-slate-100 hover:border-blue-300 rounded-lg p-2 transition-colors cursor-pointer text-sm flex flex-col justify-center min-h-[56px]"
                       onClick={() => !isEditing && handleStartEditCell(row.id, subStage.id, value)}
                     >
                       {isEditing ? (
@@ -223,13 +223,13 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={handleSaveEditCell}
-                              className="px-2 py-0.5 bg-blue-600 text-white text-[10px] rounded font-medium"
+                              className="px-2 py-0.5 bg-blue-600 text-white text-xs rounded font-medium"
                             >
                               确定
                             </button>
                             <button
                               onClick={() => setEditingCell(null)}
-                              className="px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[10px] rounded"
+                              className="px-1.5 py-0.5 bg-slate-200 text-slate-600 text-xs rounded"
                             >
                               取消
                             </button>
@@ -237,10 +237,10 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
                         </div>
                       ) : (
                         <>
-                          <div className="text-slate-700 text-[11px] leading-relaxed whitespace-pre-wrap">
+                          <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap">
                             {value || <span className="text-slate-300 italic">点击添加...</span>}
                           </div>
-                          <Edit2 className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 absolute top-1 right-1 transition-opacity" />
+                          <Edit2 className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 absolute top-1 right-1 transition-opacity" />
                         </>
                       )}
                     </div>

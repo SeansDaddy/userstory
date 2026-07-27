@@ -35,7 +35,7 @@ export const TableView: React.FC<TableViewProps> = ({
 
   return (
     <div className="p-6 bg-slate-900 min-h-[calc(100vh-64px)] text-slate-100">
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div id="journey-export-canvas" className="journey-canvas-area max-w-7xl mx-auto space-y-4 p-4 bg-slate-900 rounded-2xl">
         {/* Controls Bar */}
         <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
           {/* Search */}
@@ -46,17 +46,17 @@ export const TableView: React.FC<TableViewProps> = ({
               placeholder="搜索卡片标题或描述..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap text-xs">
+          <div className="flex items-center gap-2 flex-wrap text-sm">
             {/* Stage filter */}
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200 focus:outline-none"
+              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none text-sm"
             >
               <option value="all">所有阶段 (All Stages)</option>
               {data.stages.map((stg) => (
@@ -70,7 +70,7 @@ export const TableView: React.FC<TableViewProps> = ({
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-200 focus:outline-none"
+              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none text-sm"
             >
               <option value="all">所有角色泳道 (All Roles)</option>
               {data.roles.map((r) => (
@@ -83,22 +83,22 @@ export const TableView: React.FC<TableViewProps> = ({
             {/* Only Key filter */}
             <button
               onClick={() => setOnlyKey(!onlyKey)}
-              className={`px-3 py-1.5 rounded-xl border flex items-center gap-1 font-medium transition-colors ${
+              className={`px-3 py-2 rounded-xl border flex items-center gap-1.5 font-medium transition-colors text-sm ${
                 onlyKey
                   ? 'bg-amber-500/20 border-amber-500 text-amber-300'
                   : 'bg-slate-900 border-slate-700 text-slate-400'
               }`}
             >
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               <span>仅看关键触点 (★)</span>
             </button>
 
             {/* Add Node button */}
             <button
               onClick={onOpenAddCard}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl flex items-center gap-1 shadow-sm"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl flex items-center gap-1.5 shadow-sm text-sm"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>新建节点</span>
             </button>
           </div>
@@ -106,17 +106,17 @@ export const TableView: React.FC<TableViewProps> = ({
 
         {/* Data Table */}
         <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-          <table className="w-full text-left text-xs text-slate-200">
-            <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+          <table className="w-full text-left text-sm text-slate-200">
+            <thead className="bg-slate-900/90 text-slate-300 uppercase text-xs tracking-wider border-b border-slate-700 font-bold">
               <tr>
-                <th className="p-3">阶段 / 场景</th>
-                <th className="p-3">角色泳道</th>
-                <th className="p-3">卡片标题</th>
-                <th className="p-3">卡片描述</th>
-                <th className="p-3 text-center">关键触点</th>
-                <th className="p-3 text-center">状态</th>
-                <th className="p-3 text-center">满意度</th>
-                <th className="p-3 text-right">操作</th>
+                <th className="p-3.5">阶段 / 场景</th>
+                <th className="p-3.5">角色泳道</th>
+                <th className="p-3.5">卡片标题</th>
+                <th className="p-3.5">卡片描述</th>
+                <th className="p-3.5 text-center">关键触点</th>
+                <th className="p-3.5 text-center">状态</th>
+                <th className="p-3.5 text-center">满意度</th>
+                <th className="p-3.5 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/60">
@@ -128,14 +128,14 @@ export const TableView: React.FC<TableViewProps> = ({
 
                   return (
                     <tr key={node.id} className="hover:bg-slate-750 transition-colors">
-                      <td className="p-3">
-                        <div className="font-bold text-slate-200">{stage?.name}</div>
-                        <div className="text-[11px] text-slate-400">{subStage?.name}</div>
+                      <td className="p-3.5">
+                        <div className="font-bold text-slate-100">{stage?.name}</div>
+                        <div className="text-xs text-slate-400">{subStage?.name}</div>
                       </td>
 
-                      <td className="p-3">
+                      <td className="p-3.5">
                         <span
-                          className="px-2 py-0.5 rounded text-[10px] font-semibold text-white"
+                          className="px-2.5 py-1 rounded text-xs font-semibold text-white"
                           style={{ backgroundColor: role?.color || '#3b82f6' }}
                         >
                           {role?.name}

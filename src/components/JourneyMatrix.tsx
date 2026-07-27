@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Plus, Star, Link, HelpCircle } from 'lucide-react';
-import { JourneyMapData, JourneyNode, Role, SubStage } from '../types';
+import { JourneyMapData, JourneyNode, Role, SubStage, Connection, LineStyle } from '../types';
 import { NodeCard } from './NodeCard';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { AttributeRows } from './AttributeRows';
+import { ConnectionModal } from './ConnectionModal';
 
 interface JourneyMatrixProps {
   data: JourneyMapData;
@@ -13,9 +14,10 @@ interface JourneyMatrixProps {
   onAddAttributeRow: (name?: string, iconName?: string) => void;
   onDeleteAttributeRow: (rowId: string) => void;
   onUpdateAttributeRow?: (rowId: string, name: string, iconName?: string) => void;
-  onAddConnection: (sourceId: string, targetId: string) => void;
+  onAddConnection: (sourceId: string, targetId: string, label?: string, style?: LineStyle) => void;
   onDeleteConnection: (connId: string) => void;
   onToggleConnectionStyle: (connId: string) => void;
+  onUpdateConnection?: (connId: string, label: string, style: LineStyle) => void;
   showConnections: boolean;
   zoomLevel: number;
 }
@@ -31,23 +33,42 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
   onAddConnection,
   onDeleteConnection,
   onToggleConnectionStyle,
+  onUpdateConnection,
   showConnections,
   zoomLevel,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [connectingSourceId, setConnectingSourceId] = useState<string | null>(null);
 
+  // Connection Modal State
+  const [pendingConnection, setPendingConnection] = useState<{
+    sourceId: string;
+    targetId: string;
+  } | null>(null);
+
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+
   const handleStartConnect = (nodeId: string) => {
     if (connectingSourceId === nodeId) {
       setConnectingSourceId(null);
     } else if (connectingSourceId) {
-      // Complete connection
-      onAddConnection(connectingSourceId, nodeId);
+      // Complete connection: open label modal
+      setPendingConnection({
+        sourceId: connectingSourceId,
+        targetId: nodeId,
+      });
       setConnectingSourceId(null);
     } else {
       setConnectingSourceId(nodeId);
     }
   };
+
+  const currentEditingConn = data.connections.find((c) => c.id === editingConnectionId);
+  const pendingSourceNode = data.nodes.find((n) => n.id === pendingConnection?.sourceId);
+  const pendingTargetNode = data.nodes.find((n) => n.id === pendingConnection?.targetId);
+
+  const editingSourceNode = data.nodes.find((n) => n.id === currentEditingConn?.sourceNodeId);
+  const editingTargetNode = data.nodes.find((n) => n.id === currentEditingConn?.targetNodeId);
 
   return (
     <div className="relative w-full overflow-x-auto bg-slate-100 p-4 min-h-[calc(100vh-64px)]">
@@ -71,8 +92,9 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
 
       {/* Main Matrix Board Canvas */}
       <div
+        id="journey-export-canvas"
         ref={containerRef}
-        className="relative min-w-[1200px] bg-white border border-slate-300 rounded-2xl shadow-sm p-4 transition-transform duration-100 origin-top-left"
+        className="journey-canvas-area relative min-w-[1200px] bg-white border border-slate-300 rounded-2xl shadow-sm p-4 transition-transform duration-100 origin-top-left"
         style={{
           transform: `scale(${zoomLevel})`,
           transformOrigin: 'top left',
@@ -86,6 +108,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
             zoomLevel={zoomLevel}
             onDeleteConnection={onDeleteConnection}
             onToggleStyle={onToggleConnectionStyle}
+            onEditConnection={(connId) => setEditingConnectionId(connId)}
           />
         )}
 
@@ -99,7 +122,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           }}
         >
           {/* Header Corner Tile */}
-          <div className="bg-slate-800 text-white p-3 rounded-xl flex items-center justify-center font-bold text-xs shadow-xs">
+          <div className="bg-slate-800 text-white p-3 rounded-xl flex items-center justify-center font-bold text-sm shadow-xs">
             阶段与角色矩阵
           </div>
 
@@ -111,20 +134,20 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
             return (
               <div
                 key={stage.id}
-                className="p-2.5 rounded-xl text-white font-bold text-xs flex flex-col justify-between shadow-xs border-b-4 border-black/20"
+                className="p-3 rounded-xl text-white font-bold text-sm flex flex-col justify-between shadow-xs border-b-4 border-black/20"
                 style={{
                   gridColumn: `span ${colSpan}`,
                   backgroundColor: stage.color || '#3b82f6',
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm tracking-wide">{stage.name}</span>
-                  <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded font-normal">
+                  <span className="text-base tracking-wide font-bold">{stage.name}</span>
+                  <span className="text-xs bg-black/20 px-2 py-0.5 rounded font-normal">
                     {colSpan} 个场景
                   </span>
                 </div>
                 {stage.description && (
-                  <span className="text-[10px] font-normal opacity-90 truncate mt-0.5">
+                  <span className="text-xs font-normal opacity-90 truncate mt-1">
                     {stage.description}
                   </span>
                 )}
@@ -143,7 +166,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           }}
         >
           {/* Label */}
-          <div className="bg-slate-200 text-slate-700 p-2 rounded-xl flex items-center justify-center font-bold text-xs">
+          <div className="bg-slate-200 text-slate-700 p-2.5 rounded-xl flex items-center justify-center font-bold text-sm">
             场景 (Scenarios)
           </div>
 
@@ -151,13 +174,13 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           {data.subStages.map((subStage) => (
             <div
               key={subStage.id}
-              className={`p-2 rounded-xl border text-center text-xs font-semibold flex items-center justify-center gap-1 shadow-2xs ${
+              className={`p-2.5 rounded-xl border text-center text-sm font-semibold flex items-center justify-center gap-1.5 shadow-2xs ${
                 subStage.isKey
                   ? 'bg-amber-100/80 border-amber-300 text-amber-900 font-bold'
                   : 'bg-slate-100 border-slate-200 text-slate-700'
               }`}
             >
-              {subStage.isKey && <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />}
+              {subStage.isKey && <Star className="w-4 h-4 text-amber-600 fill-amber-500" />}
               <span>{subStage.name}</span>
             </div>
           ))}
@@ -181,12 +204,12 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
                 style={{ backgroundColor: role.color || '#3b82f6' }}
               >
                 <div>
-                  <div className="text-xs font-bold tracking-wide">{role.name}</div>
+                  <div className="text-sm font-bold tracking-wide">{role.name}</div>
                   {role.subtitle && (
-                    <div className="text-[10px] opacity-85 mt-1 leading-tight">{role.subtitle}</div>
+                    <div className="text-xs opacity-90 mt-1 leading-tight">{role.subtitle}</div>
                   )}
                 </div>
-                <div className="text-[9px] bg-black/20 px-1.5 py-0.5 rounded uppercase self-start mt-2">
+                <div className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded uppercase self-start mt-2 font-medium">
                   {role.category}
                 </div>
               </div>
@@ -221,7 +244,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
                         title="双击或点击新增节点卡片"
                       >
                         <Plus className="w-4 h-4 mb-1" />
-                        <span className="text-[10px] font-medium">添加节点</span>
+                        <span className="text-xs font-medium">添加节点</span>
                       </button>
                     )}
                   </div>
@@ -241,6 +264,44 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           onUpdateAttributeRow={onUpdateAttributeRow}
         />
       </div>
+
+      {/* Connection Modal: New Connection */}
+      <ConnectionModal
+        isOpen={!!pendingConnection}
+        onClose={() => setPendingConnection(null)}
+        sourceTitle={pendingSourceNode?.title}
+        targetTitle={pendingTargetNode?.title}
+        initialLabel="流转"
+        initialStyle="solid"
+        isEditing={false}
+        onConfirm={(label, style) => {
+          if (pendingConnection) {
+            onAddConnection(pendingConnection.sourceId, pendingConnection.targetId, label, style);
+          }
+        }}
+      />
+
+      {/* Connection Modal: Edit Connection */}
+      <ConnectionModal
+        isOpen={!!editingConnectionId}
+        onClose={() => setEditingConnectionId(null)}
+        sourceTitle={editingSourceNode?.title}
+        targetTitle={editingTargetNode?.title}
+        initialLabel={currentEditingConn?.label}
+        initialStyle={currentEditingConn?.style}
+        isEditing={true}
+        onConfirm={(label, style) => {
+          if (editingConnectionId && onUpdateConnection) {
+            onUpdateConnection(editingConnectionId, label, style);
+          }
+        }}
+        onDelete={() => {
+          if (editingConnectionId) {
+            onDeleteConnection(editingConnectionId);
+            setEditingConnectionId(null);
+          }
+        }}
+      />
     </div>
   );
 };

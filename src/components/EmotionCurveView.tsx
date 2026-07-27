@@ -29,7 +29,7 @@ export const EmotionCurveView: React.FC<EmotionCurveViewProps> = ({ data }) => {
 
   return (
     <div className="p-6 bg-slate-900 min-h-[calc(100vh-64px)] text-slate-100">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div id="journey-export-canvas" className="journey-canvas-area max-w-6xl mx-auto space-y-6 p-4 bg-slate-900 rounded-2xl">
         <div>
           <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
             <Smile className="w-5 h-5 text-emerald-400" />
