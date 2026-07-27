@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 py-1.5 rounded-xl text-white font-medium shadow-md">
             <Compass className="w-4 h-4 text-blue-200 shrink-0" />
-            <span className="text-sm font-bold tracking-wide">UX Journey Studio</span>
+            <span className="text-sm font-bold tracking-wide">用户旅程地图</span>
             <span className="text-xs bg-white/20 text-white px-1.5 py-0.2 rounded font-mono">2026</span>
           </div>
 
