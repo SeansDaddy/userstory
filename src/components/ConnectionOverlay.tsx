@@ -145,34 +145,39 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
         const midY = (p.y1 + p.y2) / 2;
 
         return (
-          <g key={p.id} className="pointer-events-auto">
-            <path d={p.pathD} fill="none" stroke="transparent" strokeWidth="16" className="cursor-pointer"
-              onMouseEnter={() => setHoveredConnId(p.id)}
-              onMouseLeave={() => setHoveredConnId(null)}
-              onClick={() => onToggleStyle?.(p.id)}
-            />
+          <g key={p.id}
+            className="pointer-events-auto cursor-pointer"
+            onMouseEnter={() => setHoveredConnId(p.id)}
+            onMouseLeave={() => setHoveredConnId(null)}
+            onClick={(e) => {
+              e.stopPropagation();
+              // 点击线: 切换实线/虚线; 点击×: 删除
+              if ((e.target as HTMLElement).tagName === 'circle' || (e.target as HTMLElement).tagName === 'text') return;
+              onToggleStyle?.(p.id);
+            }}
+          >
+            {/* 宽的透明 hit area - 覆盖整条路径 */}
+            <path d={p.pathD} fill="none" stroke="transparent" strokeWidth="20" />
+            {/* 视觉路径 */}
             <path d={p.pathD} fill="none" stroke={p.color} strokeWidth={isHovered ? 3 : 2}
               strokeDasharray={p.style === 'dashed' ? '6,6' : 'none'}
               markerEnd={p.style === 'dashed' ? 'url(#arrow-dashed)' : 'url(#arrow-solid)'}
-              className="transition-all duration-150"
+              className="transition-all duration-150 pointer-events-none"
             />
             {p.label && (
-              <g transform={`translate(${midX}, ${midY})`} className="cursor-pointer group"
-                onClick={() => onToggleStyle?.(p.id)}
-                onMouseEnter={() => setHoveredConnId(p.id)}
-                onMouseLeave={() => setHoveredConnId(null)}
-              >
+              <g transform={`translate(${midX}, ${midY})`}>
                 <rect x={-p.label.length * 5 - 8} y="-10" width={p.label.length * 10 + 16} height="20" rx="10"
                   fill={p.style === 'dashed' ? '#fce7f3' : '#eff6ff'} stroke={p.color} strokeWidth="1" />
                 <text x="0" y="3" textAnchor="middle" fontSize="10" fontWeight="600"
                   fill={p.style === 'dashed' ? '#be185d' : '#1e40af'}>{p.label}</text>
               </g>
             )}
-            {isHovered && onDeleteConnection && (
-              <g transform={`translate(${midX + 25}, ${midY - 12})`} className="cursor-pointer"
-                onClick={() => onDeleteConnection(p.id)}>
-                <circle r="8" fill="#ef4444" />
-                <text x="0" y="3" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">×</text>
+            {/* 删除按钮 - 始终可见 */}
+            {onDeleteConnection && (
+              <g transform={`translate(${midX + 25}, ${midY - 12})`}
+                onClick={(e) => { e.stopPropagation(); onDeleteConnection(p.id); }}>
+                <circle r="8" fill={isHovered ? '#ef4444' : '#94a3b8'} />
+                <text x="0" y="3" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold" pointerEvents="none">×</text>
               </g>
             )}
           </g>
