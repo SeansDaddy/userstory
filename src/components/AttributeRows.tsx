@@ -19,6 +19,8 @@ interface AttributeRowsProps {
   onAddAttributeRow?: (name?: string, iconName?: string) => void;
   onDeleteAttributeRow?: (rowId: string) => void;
   onUpdateAttributeRow?: (rowId: string, name: string, iconName?: string) => void;
+  /** 外部传入的场景列宽模板，用于与上方矩阵对齐 */
+  gridTemplateCols?: string;
 }
 
 export const AttributeRows: React.FC<AttributeRowsProps> = ({
@@ -28,6 +30,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
   onAddAttributeRow,
   onDeleteAttributeRow,
   onUpdateAttributeRow,
+  gridTemplateCols,
 }) => {
   const [editingCell, setEditingCell] = useState<{ rowId: string; subStageId: string } | null>(null);
   const [cellText, setCellText] = useState('');
@@ -151,7 +154,11 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
           {attributeRows.map((row) => (
             <div
               key={row.id}
-              className="grid grid-cols-[200px_1fr] bg-slate-50 border border-slate-200 rounded-xl shadow-2xs"
+              className="bg-slate-50 border border-slate-200 rounded-xl shadow-2xs"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: gridTemplateCols || '200px 1fr',
+              }}
             >
               {/* Left Row Header */}
               <div className="bg-slate-100 p-2.5 border-r border-slate-200 flex items-center justify-between group">
@@ -194,7 +201,9 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
               <div
                 className="grid gap-1.5 p-1 bg-white"
                 style={{
-                  gridTemplateColumns: `repeat(${subStages.length}, minmax(180px, 1fr))`,
+                  gridTemplateColumns: gridTemplateCols
+                    ? gridTemplateCols.split(' ').slice(1).join(' ')
+                    : `repeat(${subStages.length}, minmax(180px, 1fr))`,
                 }}
               >
                 {subStages.map((subStage) => {
