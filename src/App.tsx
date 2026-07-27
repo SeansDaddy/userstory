@@ -520,7 +520,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1" id="journey-export-canvas">
         {activeView === 'matrix' && (
           <JourneyMatrix
             data={journeyData}

@@ -3,11 +3,10 @@ import { JourneyMapData } from '../types';
 
 export function triggerDownload(href: string, filename: string) {
   try {
+    // Method 1: Use anchor click (most reliable)
     const a = document.createElement('a');
     a.href = href;
     a.download = filename;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -18,7 +17,37 @@ export function triggerDownload(href: string, filename: string) {
     }, 500);
   } catch (e) {
     console.error('Trigger download error:', e);
-    openDataUrlInNewWindow(href, filename);
+    // Method 2: Fallback to blob + ObjectURL
+    try {
+      const isJson = filename.endsWith('.json');
+      const isCsv = filename.endsWith('.csv');
+      const isPng = filename.endsWith('.png');
+      if ((isJson || isCsv) && typeof href === 'string') {
+        let content = '';
+        if (href.startsWith('blob:')) {
+          // blob URL already set, noop
+        } else if (href.startsWith('data:')) {
+          const blobBin = atob(href.split(',')[1]);
+          const arr = [];
+          for (let i = 0; i < blobBin.length; i++) {
+            arr.push(blobBin.charCodeAt(i));
+          }
+          const blob = new Blob([new Uint8Array(arr)], { type: isJson ? 'application/json' : 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a2 = document.createElement('a');
+          a2.href = url;
+          a2.download = filename;
+          a2.style.display = 'none';
+          document.body.appendChild(a2);
+          a2.click();
+          setTimeout(() => { URL.revokeObjectURL(url); if (document.body.contains(a2)) document.body.removeChild(a2); }, 500);
+          return;
+        }
+      }
+      openDataUrlInNewWindow(href, filename);
+    } catch {
+      openDataUrlInNewWindow(href, filename);
+    }
   }
 }
 
