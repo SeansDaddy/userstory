@@ -7,6 +7,7 @@ interface ConnectionOverlayProps {
   zoomLevel: number;
   onDeleteConnection?: (connId: string) => void;
   onToggleStyle?: (connId: string) => void;
+  onUpdateConnection?: (connId: string, label: string, style: 'solid' | 'dashed') => void;
 }
 
 interface PathCoords {
@@ -27,11 +28,12 @@ function linesOverlap(
 }
 
 export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
-  connections, containerRef, zoomLevel, onDeleteConnection, onToggleStyle,
+  connections, containerRef, zoomLevel, onDeleteConnection, onToggleStyle, onUpdateConnection,
 }) => {
   const [paths, setPaths] = useState<PathCoords[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ connId: string; x: number; y: number } | null>(null);
+  const [editingLabel, setEditingLabel] = useState<{ connId: string; label: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close context menu on outside click
@@ -180,6 +182,21 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
           className="fixed z-[100] bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-sm min-w-[140px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
+          {onUpdateConnection && (() => {
+            const conn = paths.find(p => p.id === contextMenu.connId);
+            return (
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 flex items-center gap-2"
+                onClick={() => {
+                  setEditingLabel({ connId: contextMenu.connId, label: conn?.label || '' });
+                  setContextMenu(null);
+                }}
+              >
+                <span className="text-base">✎</span>
+                编辑标签文字
+              </button>
+            );
+          })()}
           {onToggleStyle && (
             <button
               className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 flex items-center gap-2"
@@ -198,6 +215,44 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
               删除连线
             </button>
           )}
+        </div>
+      )}
+
+      {/* Edit label dialog */}
+      {editingLabel && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center" onClick={() => setEditingLabel(null)}>
+          <div className="bg-white rounded-xl shadow-xl p-5 w-80" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-800 mb-3">编辑连线标签</h3>
+            <input
+              type="text"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+              placeholder="输入标签文字..."
+              autoFocus
+              value={editingLabel.label}
+              onChange={e => setEditingLabel(l => l ? { ...l, label: e.target.value } : null)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && onUpdateConnection) {
+                  onUpdateConnection(editingLabel.connId, editingLabel.label, 'solid');
+                  setEditingLabel(null);
+                }
+              }}
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                onClick={() => setEditingLabel(null)}
+              >取消</button>
+              <button
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                onClick={() => {
+                  if (onUpdateConnection) {
+                    onUpdateConnection(editingLabel.connId, editingLabel.label, 'solid');
+                    setEditingLabel(null);
+                  }
+                }}
+              >保存</button>
+            </div>
+          </div>
         </div>
       )}
     </>

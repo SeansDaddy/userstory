@@ -108,6 +108,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
             zoomLevel={zoomLevel}
             onDeleteConnection={onDeleteConnection}
             onToggleStyle={onToggleConnectionStyle}
+            onUpdateConnection={onUpdateConnection}
             onEditConnection={(connId) => setEditingConnectionId(connId)}
           />
         )}
