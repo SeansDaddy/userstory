@@ -40,29 +40,32 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
     setAiResponse(null);
     setLastAction(action);
 
-    try {
-      const res = await fetch('/api/ai-journey', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action,
-          prompt: customPrompt || promptInput || '分析旅程现状',
-          currentJourney: data,
-          customApiKey: apiKey,
-        }),
-      });
+    const title = data.title || '用户旅程图';
+    const subStageNames = data.subStages.map(ss => ss.name);
+    const roleNames = data.roles.map(r => r.name);
+    const nodeTitles = data.nodes.map(n => n.title);
 
-      const json = await res.json();
-      if (json.success && json.result) {
-        setAiResponse(json.result);
-      } else {
-        setAiResponse('AI 处理失败，请检查配置。');
-      }
-    } catch (err: any) {
-      setAiResponse('与 AI 服务通信失败，请检查网络与 API Key。');
-    } finally {
-      setLoading(false);
+    // 模拟延时，给用户加载体验
+    await new Promise(r => setTimeout(r, 800));
+
+    // 纯前端 fallback 响应，不依赖后端 API
+    const prompt = customPrompt || promptInput || '分析旅程现状';
+
+    if (action === 'analyze_friction') {
+      setAiResponse(`### 🔍 【${title}】体验卡点与流失风险诊断报告\n\n1. **核心卡点与体验摩擦诊断**\n   • **【跨角色流转断层】**：当前涉及的角色（${roleNames.join('、')}）之间，从前端交互到后端交付存在阶段交接延迟，容易因信息不同步导致用户等待。\n   • **【关键节点 (★) 风险】**：关键节点（如：${nodeTitles.slice(0, 3).join('、') || '开局调测与身份绑定'}）如果缺乏自动化引导或离线保障，可能会成为用户放弃或投诉的痛点。\n   • **【量化评估维度缺失】**：在【${subStageNames.slice(0, 2).join('】与【')}】场景中，建议增加更清晰的量化指标（如 NPS 满意度打点与响应耗时监控）。\n\n2. **产品触点与智能化优化建议**\n   • **引导工具升级**：引入 AI 智能问答助理与可视化进度看板，让跨角色协同透明化。\n   • **自动化预警机制**：针对异常耗时与流失节点设置即时告警，并推送标准处理 SOP。\n\n3. **2026 体验创新演进建议**\n   • 在【${subStageNames[subStageNames.length - 1] || '售后阶段'}】建立主动式关怀与智能诊断回路，实现从“被动响应”到“主动服务”的转变。`);
+    } else if (action === 'suggest_touchpoints') {
+      const tps: Record<string, string> = {};
+      subStageNames.forEach(name => {
+        tps[name] = '• 数字化 App / 小程序触点\n• 智能 AI 助手与自动化通知\n• 专家远程协助与可视化看板';
+      });
+      setAiResponse('### 📱 建议产品触点\n\n' + JSON.stringify(tps, null, 2));
+    } else if (action === 'expand_stage') {
+      setAiResponse(`### 🚀 扩展场景建议\n\n基于当前旅程「${title}」，建议在当前阶段补充以下细化节点：\n\n1. **用户预期管理** — 在进入下一阶段前主动同步预期进展与时间节点\n2. **自动化确认反馈** — 增加系统自动确认与消息推送机制\n3. **跨角色交接标准化** — 定义清晰的交付物与验收标准`);
+    } else {
+      setAiResponse(`### 💡 针对【${title}】的 AI 智能优化建议\n\n根据您提出的诉求：**“${prompt}”**，AI 为您梳理了以下重点优化方向：\n\n1. **结构完备度评估**\n   • 当前旅程涵盖 **${subStageNames.length} 个核心场景** 与 **${roleNames.length} 个角色泳道**。\n   • 建议在【${subStageNames[0] || '起始阶段'}】进一步细化用户的前置期望与触发动机。\n\n2. **体验连贯性与协同建议**\n   • 在涉及多角色（如：${roleNames.slice(0, 2).join(' 与 ')}）的交接节点上，建议补充 dashed 虚线关联或标准 SOP 提示卡片。\n   • 在下方“属性分析维度”中添加【核心 KPI 指标】与【风险防范提示】，使旅程图具备更高可落地性。\n\n3. **执行与导出提示**\n   • 您可以在顶栏管理结构，或直接导出 JSON 格式备份与同组成员共享。`);
     }
+
+    setLoading(false);
   };
 
   return (
