@@ -118,7 +118,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           className="grid gap-2 mb-2"
           style={{
             gridTemplateColumns: `160px ${data.subStages
-              .map(() => 'minmax(150px, 1fr)')
+              .map(() => 'minmax(80px, 1fr)')
               .join(' ')}`,
           }}
         >
@@ -162,7 +162,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
           className="grid gap-2 mb-3"
           style={{
             gridTemplateColumns: `160px ${data.subStages
-              .map(() => 'minmax(150px, 1fr)')
+              .map(() => 'minmax(80px, 1fr)')
               .join(' ')}`,
           }}
         >
@@ -195,7 +195,7 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
               className="grid gap-2 min-h-[110px]"
               style={{
                 gridTemplateColumns: `160px ${data.subStages
-                  .map(() => 'minmax(150px, 1fr)')
+                  .map(() => 'minmax(80px, 1fr)')
                   .join(' ')}`,
               }}
             >

@@ -194,7 +194,7 @@ export const AttributeRows: React.FC<AttributeRowsProps> = ({
               <div
                 className="grid gap-1.5 p-1 bg-white"
                 style={{
-                  gridTemplateColumns: `repeat(${subStages.length}, minmax(180px, 1fr))`,
+                  gridTemplateColumns: `repeat(${subStages.length}, minmax(80px, 1fr))`,
                 }}
               >
                 {subStages.map((subStage) => {
