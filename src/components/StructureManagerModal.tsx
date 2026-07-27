@@ -17,28 +17,19 @@ export const StructureManagerModal: React.FC<StructureManagerModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'stages' | 'subStages' | 'roles'>('stages');
 
-  // Local state copy — sync with current data when modal opens
-  const [stages, setStages] = useState<Stage[]>(() => data.stages);
-  const [subStages, setSubStages] = useState<SubStage[]>(() => data.subStages);
-  const [roles, setRoles] = useState<Role[]>(() => data.roles);
+  // Local state copy
+  const [stages, setStages] = useState<Stage[]>(data.stages);
+  const [subStages, setSubStages] = useState<SubStage[]>(data.subStages);
+  const [roles, setRoles] = useState<Role[]>(data.roles);
 
-  // Reset local state to current data whenever modal opens
-  if (isOpen) {
-    // Use a ref to track last sync to avoid infinite loop
-    const syncRef = React.useRef(false);
-    if (!syncRef.current) {
-      syncRef.current = true;
-      // We'll use useEffect instead
-    }
+  // Sync local state with current data every time modal opens
+  const prevDataRef = React.useRef(data);
+  if (isOpen && prevDataRef.current !== data) {
+    prevDataRef.current = data;
+    setStages(data.stages);
+    setSubStages(data.subStages);
+    setRoles(data.roles);
   }
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setStages(data.stages);
-      setSubStages(data.subStages);
-      setRoles(data.roles);
-    }
-  }, [isOpen, data.stages, data.subStages, data.roles]);
 
   if (!isOpen) return null;
 
