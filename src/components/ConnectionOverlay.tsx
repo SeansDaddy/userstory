@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Connection } from '../types';
+import { Connection, LineStyle } from '../types';
+import { ConnectionModal } from './ConnectionModal';
 
 interface ConnectionOverlayProps {
   connections: Connection[];
+  allNodes?: { id: string; title: string }[];
   containerRef: React.RefObject<HTMLDivElement | null>;
   zoomLevel: number;
   onDeleteConnection?: (connId: string) => void;
@@ -28,21 +30,19 @@ function linesOverlap(
 }
 
 export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
-  connections, containerRef, zoomLevel, onDeleteConnection, onToggleStyle, onUpdateConnection,
+  connections, allNodes = [], containerRef, zoomLevel,
+  onDeleteConnection, onToggleStyle, onUpdateConnection,
 }) => {
   const [paths, setPaths] = useState<PathCoords[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ connId: string; x: number; y: number } | null>(null);
-  const [editingLabel, setEditingLabel] = useState<{ connId: string; label: string } | null>(null);
+  const [editConn, setEditConn] = useState<{ conn: Connection; sourceTitle: string; targetTitle: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close context menu on outside click
   useEffect(() => {
     if (!contextMenu) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setContextMenu(null);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setContextMenu(null);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -82,11 +82,9 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
       const hasOverlap = raws.slice(0, i).some(prev =>
         r.sourceId === prev.sourceId || r.targetId === prev.targetId ||
         linesOverlap(sx, sy, tx, ty, prev.sx, prev.sy, prev.tx, prev.ty));
-
       const dy = ty - sy;
       const dx = tx - sx;
       const dist = Math.sqrt(dx * dx + dy * dy);
-
       let pathD: string;
       if (hasOverlap) {
         const bendDir = (i % 2 === 0) ? 1 : -1;
@@ -99,13 +97,11 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
         const ctrlXOff = Math.min(Math.abs(dx) * 0.3, 50);
         pathD = `M ${sx} ${sy} C ${sx + ctrlXOff} ${ctrlY}, ${tx - ctrlXOff} ${ty - dy * 0.4}, ${tx} ${ty}`;
       }
-
       result.push({
         id: r.id, x1: sx, y1: sy, x2: tx, y2: ty,
         pathD, label: r.label, style: r.style, color: r.color,
       });
     });
-
     setPaths(result);
   };
 
@@ -119,6 +115,18 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
       clearInterval(interval);
     };
   }, [connections, zoomLevel]);
+
+  const openEditModal = (connId: string) => {
+    const conn = connections.find(c => c.id === connId);
+    if (!conn) return;
+    const src = allNodes.find(n => n.id === conn.sourceNodeId);
+    const tgt = allNodes.find(n => n.id === conn.targetNodeId);
+    setEditConn({
+      conn,
+      sourceTitle: src?.title || '起点节点',
+      targetTitle: tgt?.title || '目标节点',
+    });
+  };
 
   const handleContextMenu = (e: React.MouseEvent, connId: string) => {
     e.preventDefault();
@@ -142,22 +150,14 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
 
         {paths.map(p => {
           const isHovered = hoveredId === p.id;
-
-          const connObj = connections.find(c => c.id === p.id);
-
           return (
             <g key={p.id} className="pointer-events-auto">
-              {/* Hit area */}
               <path d={p.pathD} fill="none" stroke="transparent" strokeWidth="18"
                 onMouseEnter={() => setHoveredId(p.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onContextMenu={(e) => handleContextMenu(e, p.id)}
-                onDoubleClick={() => {
-                  setEditingLabel({ connId: p.id, label: connObj?.label || '' });
-                }}
-                onClick={() => onToggleStyle?.(p.id)}
+                onClick={() => openEditModal(p.id)}
               />
-              {/* Visual line */}
               <path d={p.pathD} fill="none"
                 stroke={isHovered ? '#f97316' : p.color}
                 strokeWidth={isHovered ? 3 : 2}
@@ -188,78 +188,42 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
           className="fixed z-[100] bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-sm min-w-[140px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          {onUpdateConnection && (() => {
-            const conn = paths.find(p => p.id === contextMenu.connId);
-            return (
-              <button
-                className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 flex items-center gap-2"
-                onClick={() => {
-                  setEditingLabel({ connId: contextMenu.connId, label: conn?.label || '' });
-                  setContextMenu(null);
-                }}
-              >
-                <span className="text-base">✎</span>
-                编辑标签文字
-              </button>
-            );
-          })()}
-          {onToggleStyle && (
-            <button
-              className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 flex items-center gap-2"
-              onClick={() => { onToggleStyle(contextMenu.connId); setContextMenu(null); }}
-            >
-              <span className="text-base">↻</span>
-              切换线型（实线/虚线）
-            </button>
-          )}
-          {onDeleteConnection && (
-            <button
-              className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
-              onClick={() => { onDeleteConnection(contextMenu.connId); setContextMenu(null); }}
-            >
-              <span className="text-base">✕</span>
-              删除连线
-            </button>
-          )}
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 flex items-center gap-2"
+            onClick={() => { openEditModal(contextMenu.connId); setContextMenu(null); }}
+          >
+            <span className="text-base">✎</span>
+            编辑连线
+          </button>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
+            onClick={() => { onDeleteConnection?.(contextMenu.connId); setContextMenu(null); }}
+          >
+            <span className="text-base">✕</span>
+            删除连线
+          </button>
         </div>
       )}
 
-      {/* Edit label dialog */}
-      {editingLabel && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center" onClick={() => setEditingLabel(null)}>
-          <div className="bg-white rounded-xl shadow-xl p-5 w-80" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-slate-800 mb-3">编辑连线标签</h3>
-            <input
-              type="text"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-              placeholder="输入标签文字..."
-              autoFocus
-              value={editingLabel.label}
-              onChange={e => setEditingLabel(l => l ? { ...l, label: e.target.value } : null)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && onUpdateConnection) {
-                  onUpdateConnection(editingLabel.connId, editingLabel.label, 'solid');
-                  setEditingLabel(null);
-                }
-              }}
-            />
-            <div className="flex justify-end gap-2 mt-3">
-              <button
-                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                onClick={() => setEditingLabel(null)}
-              >取消</button>
-              <button
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                onClick={() => {
-                  if (onUpdateConnection) {
-                    onUpdateConnection(editingLabel.connId, editingLabel.label, 'solid');
-                    setEditingLabel(null);
-                  }
-                }}
-              >保存</button>
-            </div>
-          </div>
-        </div>
+      {/* Edit connection modal */}
+      {editConn && (
+        <ConnectionModal
+          isOpen={true}
+          onClose={() => setEditConn(null)}
+          sourceTitle={editConn.sourceTitle}
+          targetTitle={editConn.targetTitle}
+          initialLabel={editConn.conn.label || ''}
+          initialStyle={editConn.conn.style}
+          isEditing={true}
+          onConfirm={(label, style) => {
+            onUpdateConnection?.(editConn.conn.id, label, style);
+            setEditConn(null);
+          }}
+          onDelete={() => {
+            onDeleteConnection?.(editConn.conn.id);
+            setEditConn(null);
+          }}
+        />
       )}
     </>
   );

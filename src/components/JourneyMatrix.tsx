@@ -105,12 +105,12 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
         {showConnections && (
           <ConnectionOverlay
             connections={data.connections}
+            allNodes={data.nodes.map(n => ({ id: n.id, title: n.title }))}
             containerRef={containerRef}
             zoomLevel={zoomLevel}
             onDeleteConnection={onDeleteConnection}
             onToggleStyle={onToggleConnectionStyle}
             onUpdateConnection={onUpdateConnection}
-            onEditConnection={(connId) => setEditingConnectionId(connId)}
           />
         )}
 
