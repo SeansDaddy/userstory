@@ -94,8 +94,9 @@ export const JourneyMatrix: React.FC<JourneyMatrixProps> = ({
       <div
         id="journey-export-canvas"
         ref={containerRef}
-        className="journey-canvas-area relative min-w-[1200px] bg-white border border-slate-300 rounded-2xl shadow-sm p-4 transition-transform duration-100 origin-top-left"
+        className="journey-canvas-area relative bg-white border border-slate-300 rounded-2xl shadow-sm p-4 transition-transform duration-100 origin-top-left"
         style={{
+          minWidth: 160 + data.subStages.length * 140,
           transform: `scale(${zoomLevel})`,
           transformOrigin: 'top left',
         }}
